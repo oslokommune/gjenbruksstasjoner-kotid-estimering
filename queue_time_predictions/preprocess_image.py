@@ -1,12 +1,12 @@
 import io
 import pickle
-import sys
 
 import boto3
 import cv2
 import numpy as np
 from aws_xray_sdk.core import patch_all, xray_recorder
 from dataplatform.awslambda.logging import logging_wrapper, log_add
+from dataplatform.pipeline.s3 import Config
 
 patch_all()
 
@@ -24,53 +24,55 @@ BUCKET_NAME = "ok-origo-dataplatform-dev"
 DESTINATION_KEY_PREFIX = r"test/espeng-testing-bucket/prediction_testing/cropped_images"
 
 
-# TODO: Remove this after we start receiving proper events.
-def get_image_keys_hardcoded():
-    """Hardcoding for now, this will be triggered by an event. The actual images
-    are loaded to prod raw/red/REN.
+def read_image(bucket_name: str, prefix: str, region_name="eu-west-1") -> tuple:
+
     """
+    Read an image file from S3 found at `prefix` and return it as a cv2-image
+    object (really a Numpy array) together with its S3 key.
 
-    return [
-        "test/espeng-testing-bucket/prediction_testing/raw_images/station_id_41_20200506T094000.jpg",
-        "test/espeng-testing-bucket/prediction_testing/raw_images/station_id_41_20200506T095000.jpg",
-        "test/espeng-testing-bucket/prediction_testing/raw_images/station_id_41_20200506T100000.jpg",
-        "test/espeng-testing-bucket/prediction_testing/raw_images/station_id_41_20200506T101000.jpg",
-        "test/espeng-testing-bucket/prediction_testing/raw_images/station_id_41_20200506T102000.jpg",
-        "test/espeng-testing-bucket/prediction_testing/raw_images/station_id_41_20200506T103000.jpg",
-    ]
+    Args:
+        bucket_name: The bucket name.
+        prefix: The key prefix or 'folder' of where the raw image is stored on the S3 bucket.
+        region_name : The name of the AWS-region. Default: 'eu-west-1'
 
-
-def read_image(bucket_name, key, region_name="eu-west-1"):
-    """Read an image file from S3 and return it as a cv2-image object (really a
-    Numpy array).
+    Returns:
+        image: The image which has been read.
+        obj.key: The S3 key of the image.
     """
 
     s3_resource = boto3.resource("s3", region_name=region_name)
     bucket = s3_resource.Bucket(bucket_name)
 
     try:
-        image = bucket.Object(key).get().get("Body").read()
-    except s3_resource.meta.client.exceptions.NoSuchKey:
+        obj = next(iter(bucket.objects.filter(Prefix=prefix)))
+    except StopIteration:
         log_add(
-            error_message=f"No image found with S3 key {key}.", level="error",
+            error_message=f"No images found at S3 prefix {prefix}.", level="error",
         )
         raise
 
+    image = obj.get().get("Body").read()
     image = cv2.imdecode(np.asarray(bytearray(image)), cv2.IMREAD_COLOR)
 
-    return image
+    return image, obj.key
 
 
-def paint_everything_outside_ROI(image, roi):
-    """Paint everything outside the ROI white to remove noise (useless
-    information)."""
+def paint_everything_outside_ROI(image: np.ndarray, roi: np.ndarray) -> np.ndarray:
+    """
+    Paint everything outside the ROI white to remove noise (useless
+    information).
 
-    try:
-        assert type(image) == np.ndarray
-    except AssertionError:
-        print(type(image))
-        sys.exit(1)
+    Args:
+        image: The image to be painted outside the region of interest, as a Numpy array.
 
+    Returns:
+        image: The painted image, as a Numpy array.
+
+    Raises:
+        AssertionError: If one of the incoming arguments are not of the correct type.
+    """
+
+    assert isinstance(image, np.ndarray)
     assert type(roi) == np.ndarray
 
     mask = np.ones_like(image) * 255
@@ -80,9 +82,19 @@ def paint_everything_outside_ROI(image, roi):
     return image
 
 
-def crop_image(image, roi):
-    """Keep a rectangle minimized around the ROI (the reduce network size and
-    useless processing).
+def crop_image(image: np.ndarray, roi: np.ndarray) -> np.ndarray:
+    """
+    Cropping the image a minimized rectangle which still contains the region of interest.
+    The purpose is to reduce network size and useless processing.
+
+    Args:
+        image: The image to be cropped, as a Numpy array.
+
+    Returns:
+        image: The cropped image, as a Numpy array.
+
+    Raises:
+        AssertionError: If one of the incoming arguments are not of the correct type.
     """
 
     assert type(image) == np.ndarray
@@ -98,8 +110,25 @@ def crop_image(image, roi):
     return image
 
 
-def normalize_image(image):
-    """Normalize the image, since ANNs works best with small values."""
+def normalize_image(image: np.ndarray) -> np.ndarray:
+    """
+    Normalize the image to values between 0-1, since deep neural networks work
+    best with small values.
+
+    Expected input is a numpy array range 0-255.
+
+    Args:
+        image : The image, as a Numpy array.
+
+    Returns:
+         image : The image, as a Numpy array, with normalized values.
+
+    Raises:
+        AssertionError: If the input or output arrays are not within the expected ranges.
+    """
+
+    assert isinstance(image, np.ndarray)
+    assert image.max() <= 255
 
     image = image.astype(np.float64)
     image = image * (1.0 / 255)
@@ -111,9 +140,21 @@ def normalize_image(image):
 
 
 def save_data_to_S3(
-    obj, bucket_name, original_destination_key, region_name="eu-west-1"
-):
-    """Save the binary object to the given S3-location."""
+    obj: object,
+    bucket_name: str,
+    original_destination_key: str,
+    region_name="eu-west-1",
+) -> None:
+    """
+    Saves the binary object to the given S3-location.
+
+    Args:
+        obj : Any Python object
+        bucket_name : The bucket name.
+        original_destination_key : The original key of the object.
+        region_name : The name of the AWS-region. Default: 'eu-west-1'
+
+    """
 
     print("Processing: {0}".format(original_destination_key))
     s3_output_key = original_destination_key.replace(".jpg", ".bin")
@@ -126,22 +167,57 @@ def save_data_to_S3(
     s3_client.upload_fileobj(source_stream, bucket_name, s3_output_key)
 
 
-def crop_and_normalize_images(destination_key_prefix, bucket_name, src_keys, roi):
-    """Push the images through the pipeline and save them in S3."""
+def crop_and_normalize_image(
+    destination_key_prefix: str, bucket_name: str, prefix: str, roi: np.ndarray
+) -> None:
+    """
+    This function reads the image from the given destination in S3, then does
+    some initial processing of it to make it more suited to be used for deep
+    neural network image analysis. The processed image is then written to S3.
 
-    for key in src_keys:
-        image = read_image(bucket_name, key)
-        image = paint_everything_outside_ROI(image, roi)
-        cropped_image = crop_image(image, roi)
-        normalized_image = normalize_image(cropped_image)
-        destination_key = "{0}/{1}".format(destination_key_prefix, key.split(r"/")[-1])
+    Args:
+        destination_key_prefix : The key prefix or 'folder' of where the processed image will be stored in the S3 bucket.
+        bucket_name : The bucket name.
+        prefix : The key prefix or 'folder' of where the raw image is stored on the S3 bucket.
+        roi : A numpy array with shape (n, 2), defining the region of interest in the raw image.
+    """
 
-        # Saved as raw numpy array, not a .jpg.
-        save_data_to_S3(normalized_image, bucket_name, destination_key)
+    image, key = read_image(bucket_name, prefix)
+    image = paint_everything_outside_ROI(image, roi)
+    cropped_image = crop_image(image, roi)
+    normalized_image = normalize_image(cropped_image)
+    destination_key = "{0}/{1}".format(destination_key_prefix, key.split("/")[-1])
+
+    # Saved as raw numpy array, not a .jpg.
+    save_data_to_S3(normalized_image, bucket_name, destination_key)
 
 
 @logging_wrapper
 @xray_recorder.capture("handle")
 def handle(event, context):
-    image_keys = get_image_keys_hardcoded()
-    crop_and_normalize_images(DESTINATION_KEY_PREFIX, BUCKET_NAME, image_keys, ROI)
+    config = Config.from_lambda_event(event)
+
+    try:
+        input_prefixes = config.payload.step_data.s3_input_prefixes
+    except AttributeError:
+        log_add(
+            error_message=(
+                "Malformed event: Expected to find JSON path "
+                "`config.payload.step_data.s3_input_prefixes`."
+            ),
+            event=event,
+            level="error",
+        )
+        raise
+
+    try:
+        input_prefix = next(iter(input_prefixes.values()))
+    except StopIteration:
+        log_add(
+            error_message="Malformed event: `input_prefixes` is empty.",
+            event=event,
+            level="error",
+        )
+        raise
+
+    crop_and_normalize_image(DESTINATION_KEY_PREFIX, BUCKET_NAME, input_prefix, ROI)
