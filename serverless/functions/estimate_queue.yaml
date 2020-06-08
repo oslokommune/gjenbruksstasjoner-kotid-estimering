@@ -1,0 +1,3 @@
+handler: queue_time_predictions.estimate_queue.handle
+layers:
+  - ${ssm:/dataplatform/python-base-lambda-layer/arn}

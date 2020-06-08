@@ -17,5 +17,10 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.oslo.kommune.no/origo-dataplatform/gjenbruksstasjoner-queue-time-predictions",
     packages=find_packages(),
-    install_requires=[],
+    install_requires=[
+        "boto3",
+        "dataplatform-common-python",
+        "numpy",
+        "opencv-python-headless",
+    ],
 )
