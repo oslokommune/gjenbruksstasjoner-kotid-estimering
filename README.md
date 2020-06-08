@@ -1,5 +1,5 @@
-Gjenbruksstasjoner Queue Time Predictions
-==================
+Gjenbruksstasjoner køtidestimering
+==================================
 Lambda functions for predicting queue time estimates for recycling stations in Oslo.
 
 ## Setup

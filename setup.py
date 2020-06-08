@@ -15,7 +15,7 @@ setup(
     description="Lambda functions for estimating queue times",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.oslo.kommune.no/origo-dataplatform/gjenbruksstasjoner-queue-time-predictions",
+    url="https://github.oslo.kommune.no/origo-dataplatform/gjenbruksstasjoner-kotid-estimering",
     packages=find_packages(),
     install_requires=[
         "boto3",

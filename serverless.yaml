@@ -1,5 +1,5 @@
 frameworkVersion: ">=1.64.0 <2.0.0"
-service: gjenbruksstasjoner-queue-predictions
+service: gjenbruksstasjoner-kotid-estimering
 provider:
   name: aws
   runtime: python3.7
