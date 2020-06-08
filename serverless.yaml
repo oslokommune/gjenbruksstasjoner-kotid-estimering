@@ -22,6 +22,7 @@ provider:
     GIT_REV: ${git:branch}:${git:sha1}
     STAGE: ${self:provider.stage}
     VERSION: ${self:custom.version}
+    BUCKET_NAME: ok-origo-dataplatform-${self:provider.stage}
 package:
   exclude:
     - '**/*'

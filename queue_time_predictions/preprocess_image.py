@@ -1,4 +1,5 @@
 import io
+import os
 import pickle
 
 import boto3
@@ -10,7 +11,7 @@ from dataplatform.pipeline.s3 import Config
 
 patch_all()
 
-# TODO: Get the configurations below from the task config.
+# TODO: Get this from the task config.
 
 # ROI is the Region of Interest in the image, i.e. the part of the image where
 # the interesting information is located. When processing in OpenCV, it is
@@ -19,9 +20,7 @@ patch_all()
 # right) and the second number is the y-coordinate (top to bottom).
 ROI = np.array([[0, 132], [0, 211], [1227, 125], [1075, 101]], dtype=np.int32)
 
-BUCKET_NAME = "ok-origo-dataplatform-dev"
-
-DESTINATION_KEY_PREFIX = r"test/espeng-testing-bucket/prediction_testing/cropped_images"
+BUCKET_NAME = os.environ["BUCKET_NAME"]
 
 
 def read_image(bucket_name: str, prefix: str, region_name="eu-west-1") -> tuple:
@@ -186,7 +185,7 @@ def crop_and_normalize_image(
     image = paint_everything_outside_ROI(image, roi)
     cropped_image = crop_image(image, roi)
     normalized_image = normalize_image(cropped_image)
-    destination_key = "{0}/{1}".format(destination_key_prefix, key.split("/")[-1])
+    destination_key = "{0}{1}".format(destination_key_prefix, key.split("/")[-1])
 
     # Saved as raw numpy array, not a .jpg.
     save_data_to_S3(normalized_image, bucket_name, destination_key)
@@ -220,4 +219,19 @@ def handle(event, context):
         )
         raise
 
-    crop_and_normalize_image(DESTINATION_KEY_PREFIX, BUCKET_NAME, input_prefix, ROI)
+    try:
+        output_prefix = config.payload.output_dataset.s3_prefix.replace(
+            "%stage%", "intermediate"
+        )
+    except AttributeError:
+        log_add(
+            error_message=(
+                "Malformed event: Expected to find JSON path "
+                "`config.payload.output_dataset.s3_prefix`."
+            ),
+            event=event,
+            level="error",
+        )
+        raise
+
+    crop_and_normalize_image(output_prefix, BUCKET_NAME, input_prefix, ROI)
