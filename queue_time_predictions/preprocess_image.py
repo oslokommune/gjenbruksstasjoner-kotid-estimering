@@ -4,6 +4,7 @@ import boto3
 import cv2
 import numpy as np
 from dataplatform.awslambda.logging import log_add
+from keras.applications import VGG16
 from luigi.contrib.s3 import S3Target
 
 from queue_time_predictions.util import getenv
@@ -165,9 +166,25 @@ def crop_and_normalize_image(
     cropped_image = crop_image(painted_image, roi)
     normalized_image = normalize_image(cropped_image)
 
-    # Saved as raw numpy array, not a .jpg.
-    save_data_to_S3(normalized_image, output_target)
+    return normalized_image
+
+
+def get_VGG16_convbase(image_shape):
+    """Get the convolutional, pre-trained base."""
+    return VGG16(weights="imagenet", include_top=False, input_shape=image_shape)
+
+
+def run_image_through_VGG16_convbase(image):
+    """Run `image` through the convolutional base and return the result."""
+    convbase = get_VGG16_convbase(image_shape=image.shape)
+    return convbase.predict(np.array([image])).flatten()
 
 
 def preprocess_image(input_prefix, output_target):
-    crop_and_normalize_image(input_prefix, output_target, ROI)
+    cropped_and_normalized_image = crop_and_normalize_image(
+        input_prefix, output_target, ROI
+    )
+    preprocessed_image = run_image_through_VGG16_convbase(cropped_and_normalized_image)
+
+    # Saved as raw numpy array, not a .jpg.
+    save_data_to_S3(preprocessed_image, output_target)
