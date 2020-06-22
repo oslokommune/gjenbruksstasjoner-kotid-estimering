@@ -3,6 +3,8 @@ Gjenbruksstasjoner køtidestimering
 
 Luigi tasks for predicting queue time estimates for recycling stations in Oslo.
 
+![Queue_time_predictions task flow](doc/queue_time_predictions.png)
+
 ## Setup
 
 Requires python >= 3.7

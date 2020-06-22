@@ -1,0 +1,38 @@
+digraph G {
+  node [ fontname = "Cantarell" ];
+  edge [ fontname = "Cantarell"; fontsize = 11 ];
+
+  PreprocessImage [
+    label = "PreprocessImage";
+    style = bold;
+    shape = rect;
+  ];
+  PreprocessImage_in [
+    label = "S3: Image file";
+    shape = note;
+  ];
+  PreprocessImage_out [
+    label = "S3Target(processed.bin)";
+    shape = note;
+  ];
+
+  EstimateQueue [
+    label = "EstimateQueue";
+    style = bold;
+    shape = rect;
+  ];
+
+  PreprocessImage_in -> PreprocessImage [ style=dotted ];
+  PreprocessImage -> PreprocessImage_out [ label = "output()" ];
+  PreprocessImage -> EstimateQueue [ label = "requires()" ];
+  PreprocessImage_out -> EstimateQueue [ label = "input()" ];
+
+  {
+    rank=same;
+    PreprocessImage; EstimateQueue;
+  }
+  {
+    rank=same;
+    PreprocessImage_in; PreprocessImage_out;
+  }
+}
