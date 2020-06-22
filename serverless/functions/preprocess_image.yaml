@@ -1,3 +1,0 @@
-handler: queue_time_predictions.preprocess_image.handle
-layers:
-  - ${ssm:/dataplatform/python-base-lambda-layer/arn}

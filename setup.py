@@ -20,7 +20,9 @@ setup(
     install_requires=[
         "boto3",
         "dataplatform-common-python",
+        "luigi",
         "numpy",
         "opencv-python-headless",
+        "s3fs",
     ],
 )

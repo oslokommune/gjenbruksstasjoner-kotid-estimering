@@ -1,6 +1,7 @@
 Gjenbruksstasjoner køtidestimering
 ==================================
-Lambda functions for predicting queue time estimates for recycling stations in Oslo.
+
+Luigi tasks for predicting queue time estimates for recycling stations in Oslo.
 
 ## Setup
 
@@ -49,9 +50,20 @@ For tests and linting we use [pytest](https://pypi.org/project/pytest/),
 [flake8](https://pypi.org/project/flake8/) and
 [black](https://pypi.org/project/black/).
 
+## Running locally
+
+Running the code locally depends on the following environment variable:
+
+```bash
+export BUCKET_NAME=ok-origo-dataplatform-dev
+```
+
+Start the Luigi task runner, adjusting the `prefix` parameter as needed:
+
+```bash
+python -m luigi --module queue_time_predictions.tasks PreprocessImage --prefix=test/my-testing-bucket --local-scheduler
+```
 
 ## Deploy
 
-`make deploy` or `make deploy-prod`
-
-Requires `saml2aws`
+TODO.

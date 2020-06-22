@@ -14,10 +14,7 @@ BUILD_VENV ?= .build_venv
 BUILD_PY := $(BUILD_VENV)/bin/python
 
 .PHONY: init
-init: node_modules $(BUILD_VENV)
-
-node_modules: package.json package-lock.json
-	npm install
+init: $(BUILD_VENV)
 
 $(BUILD_VENV):
 	$(GLOBAL_PY) -m venv $(BUILD_VENV)
@@ -36,12 +33,12 @@ upgrade-deps: $(BUILD_VENV)/bin/pip-compile
 	$(BUILD_VENV)/bin/pip-compile -U
 
 .PHONY: deploy
-deploy: node_modules test login-dev
+deploy: test login-dev
 	@echo "\nDeploying to stage: $${STAGE:-dev}\n"
 	sls deploy --stage $${STAGE:-dev} --aws-profile $(.DEV_PROFILE)
 
 .PHONY: deploy-prod
-deploy-prod: node_modules is-git-clean test login-prod
+deploy-prod: is-git-clean test login-prod
 	sls deploy --stage prod --aws-profile $(.PROD_PROFILE)
 
 ifeq ($(MAKECMDGOALS),undeploy)
