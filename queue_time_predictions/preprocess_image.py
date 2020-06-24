@@ -170,12 +170,23 @@ def crop_and_normalize_image(
 
 
 def get_VGG16_convbase(image_shape):
-    """Get the convolutional, pre-trained base."""
+    """
+    Get the convolutional, pre-trained base.
+
+    VGG16 is a convolutional neural network architecture, in this case trained on the ImageNet data set and is freely
+    available with Keras. We will only use the convolutional base layers, while leaving out the closely connected layers
+    at the end.
+    """
     return VGG16(weights="imagenet", include_top=False, input_shape=image_shape)
 
 
 def run_image_through_VGG16_convbase(image):
-    """Run `image` through the convolutional base and return the result."""
+    """
+    Run `image` through the convolutional base and return the result.
+
+    The output after processing the numpy array through it will later be processed through a custom architecture of
+    densely connected layers to produce a prediction.
+    """
     convbase = get_VGG16_convbase(image_shape=image.shape)
     return convbase.predict(np.array([image])).flatten()
 

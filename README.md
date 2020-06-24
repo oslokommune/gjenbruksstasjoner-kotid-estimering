@@ -69,3 +69,24 @@ python -m luigi --module queue_time_predictions.tasks PreprocessImage --prefix=t
 ## Deploy
 
 TODO.
+
+## Process steps
+
+The steps below describe the main steps in the prediction process.
+
+1. Read the image as a numpy array.
+2. Paint everything outside the Region of Interest as white to remove non-valuable information (noise).
+3. Crop the image to as small as possible around the Region of Interest.
+4. Normalize all image values to 0-1 as this generally improves neural network performance.
+5. Process this data through the VGG16 convolutional base (see the docstring for the functions `get_VGG16_convbase` and `run_image_through_VGG16_convbase` for more detail).
+6. Process the output from the convolutional base through custom trained densely connected layers.
+7. A prediction is now describing where in the image the queue ends (in pixels).
+8. The prediction is the mapped to meters from the gate.
+9. If there are two lanes, the number of meters from the gate is doubled.
+10. *Number of cars* is found by multiplying *Meters (of cars)* with a *car density* constant.
+11. *Expected time in queue* is found by dividing *Number of cars* with an *Inflow rate*.
+
+In addition to the traditionally trained machine learning model, several empirically found constants are being used.
+
+TODO: The background for this will be documented in a separate repo.
+
