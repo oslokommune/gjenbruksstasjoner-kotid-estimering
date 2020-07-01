@@ -19,6 +19,19 @@ from queue_time_predictions.util import getenv
 ROI = np.array([[0, 132], [0, 211], [1227, 125], [1075, 101]], dtype=np.int32)
 
 
+def image_object(prefix: str, region_name="eu-west-1"):
+    s3_resource = boto3.resource("s3", region_name=region_name)
+    bucket = s3_resource.Bucket(getenv("BUCKET_NAME"))
+
+    try:
+        return next(iter(bucket.objects.filter(Prefix=prefix)))
+    except StopIteration:
+        log_add(
+            error_message=f"No images found at S3 prefix {prefix}.", level="error",
+        )
+        raise
+
+
 def read_image(prefix: str, region_name="eu-west-1") -> tuple:
 
     """
@@ -33,18 +46,8 @@ def read_image(prefix: str, region_name="eu-west-1") -> tuple:
         image: The image which has been read.
     """
 
-    s3_resource = boto3.resource("s3", region_name=region_name)
-    bucket = s3_resource.Bucket(getenv("BUCKET_NAME"))
-
-    try:
-        obj = next(iter(bucket.objects.filter(Prefix=prefix)))
-    except StopIteration:
-        log_add(
-            error_message=f"No images found at S3 prefix {prefix}.", level="error",
-        )
-        raise
-
-    image = obj.get().get("Body").read()
+    image_obj = image_object(prefix, region_name)
+    image = image_obj.get().get("Body").read()
     image = cv2.imdecode(np.asarray(bytearray(image)), cv2.IMREAD_COLOR)
 
     return image

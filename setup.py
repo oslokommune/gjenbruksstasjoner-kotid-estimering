@@ -24,6 +24,7 @@ setup(
         "luigi",
         "numpy",
         "opencv-python-headless",
+        "python-dateutil",
         "s3fs",
         "tensorflow",
     ],

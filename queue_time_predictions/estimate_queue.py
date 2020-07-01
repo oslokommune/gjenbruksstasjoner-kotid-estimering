@@ -1,4 +1,6 @@
+import logging
 import pickle
+import re
 from dataclasses import dataclass
 from decimal import Decimal
 from io import BytesIO
@@ -6,6 +8,7 @@ from pathlib import Path
 
 import boto3
 import numpy as np
+from dateutil.parser import isoparse
 from keras.engine.sequential import Sequential
 
 
@@ -23,6 +26,33 @@ model_specs = [
     ModelSpec("queue_lanes", "CNN_Lanes_VGG16_weighted.h5"),
     ModelSpec("queue_full", "CNN_QF_VGG16_noaug.h5"),
 ]
+
+
+def parse_image_filename(filename):
+    """Return station ID and timestamp found by parsing `filename`.
+
+    The filename is expected to be on the form 'station_id_X_T.bin', where X is
+    an integer and T is an ISO 8601 timestamp.
+    """
+    try:
+        m = re.match("station_id_([0-9]+)_([0-9T]+).bin", filename)
+        groups = m.groups()
+
+        if len(groups) != 2:
+            raise ValueError
+
+        station_id = int(groups[0])
+        timestamp = isoparse(groups[1]).timestamp()
+
+    except Exception:
+        logging.error(
+            "Error during image filename parsing. Expected filename on the form "
+            "'station_id_X_T.bin', where X is an integer and T is an ISO 8601 "
+            "timestamp."
+        )
+        raise
+
+    return station_id, timestamp
 
 
 def load_model(filename, region_name="eu-west-1"):
@@ -108,13 +138,11 @@ def estimate_time_in_queue(predictions, inflow_rate=70) -> np.float64:
     return predictions["cars"] / inflow_rate
 
 
-def write_to_dynamodb(predictions, region="eu-west-1"):
+def write_to_dynamodb(station_id, timestamp, predictions, region="eu-west-1"):
     dynamodb = boto3.resource("dynamodb", region)
     table = dynamodb.Table("gjenbruksstasjoner-estimert-kotid")
     table.update_item(
-        # TODO: Extract station ID and timestamp from the name of the original
-        #       image file.
-        Key={"station_id": 0, "timestamp": "n/a"},
+        Key={"station_id": station_id, "timestamp": str(timestamp)},
         UpdateExpression="set {}".format(
             " ,".join([f"{key} = :{key}" for key in predictions])
         ),
@@ -125,6 +153,8 @@ def write_to_dynamodb(predictions, region="eu-west-1"):
 
 
 def estimate_queue(input_source):
+    station_id, timestamp = parse_image_filename(input_source.path.split("/")[-1])
+
     for model_spec in model_specs:
         model_spec.model_object = load_model(model_spec.filename)
 
@@ -133,4 +163,4 @@ def estimate_queue(input_source):
     predictions["cars"] = estimate_cars_at_haraldrud(predictions)
     predictions["expected_queue_time"] = estimate_time_in_queue(predictions)
 
-    write_to_dynamodb(predictions)
+    write_to_dynamodb(station_id, timestamp, predictions)

@@ -4,7 +4,7 @@ import luigi
 from luigi.contrib.s3 import S3Target
 
 from queue_time_predictions.estimate_queue import estimate_queue
-from queue_time_predictions.preprocess_image import preprocess_image
+from queue_time_predictions.preprocess_image import image_object, preprocess_image
 from queue_time_predictions.util import getenv
 
 
@@ -17,11 +17,13 @@ class PreprocessImage(luigi.Task):
         preprocess_image(self.prefix, self.output())
 
     def output(self):
+        image_key = image_object(self.prefix).key
+        image_filename_base = image_key.split("/")[-1].split(".")[0]
         path = "/".join(
             [
                 getenv("BUCKET_NAME"),
                 re.sub("^[^/]+", "intermediate", self.prefix, 1),
-                "processed.bin",
+                f"{image_filename_base}.bin",
             ]
         )
         return S3Target(f"s3://{path}", format=luigi.format.Nop)
