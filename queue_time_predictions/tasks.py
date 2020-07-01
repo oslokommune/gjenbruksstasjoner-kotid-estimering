@@ -1,4 +1,4 @@
-import os
+import re
 
 import luigi
 from luigi.contrib.s3 import S3Target
@@ -17,7 +17,13 @@ class PreprocessImage(luigi.Task):
         preprocess_image(self.prefix, self.output())
 
     def output(self):
-        path = os.path.join(getenv("BUCKET_NAME"), self.prefix, "processed.bin")
+        path = "/".join(
+            [
+                getenv("BUCKET_NAME"),
+                re.sub("^[^/]+", "intermediate", self.prefix, 1),
+                "processed.bin",
+            ]
+        )
         return S3Target(f"s3://{path}", format=luigi.format.Nop)
 
 
