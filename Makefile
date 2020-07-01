@@ -1,5 +1,6 @@
 .AWS_ROLE_NAME ?= oslokommune/iamadmin-SAML
 
+.REGION := eu-west-1
 .DEV_ACCOUNT := ***REMOVED***
 .PROD_ACCOUNT := ***REMOVED***
 
@@ -8,6 +9,8 @@
 
 .DEV_PROFILE := saml-origo-dev
 .PROD_PROFILE := saml-dataplatform-prod
+
+.IMAGE_NAME := ok-origo-dataplatform/gjenbruksstasjoner-kotid-estimering
 
 GLOBAL_PY := python3.7
 BUILD_VENV ?= .build_venv
@@ -34,12 +37,17 @@ upgrade-deps: $(BUILD_VENV)/bin/pip-compile
 
 .PHONY: deploy
 deploy: test login-dev
-	@echo "\nDeploying to stage: $${STAGE:-dev}\n"
-	sls deploy --stage $${STAGE:-dev} --aws-profile $(.DEV_PROFILE)
+	@echo "\nDeploying to stage: dev\n"
+	aws ecr get-login-password --region $(.REGION) | docker login --username AWS --password-stdin $(.DEV_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME);
+	docker tag $(.IMAGE_NAME):latest $(.DEV_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME):latest;
+	docker push $(.DEV_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME):latest
 
 .PHONY: deploy-prod
 deploy-prod: is-git-clean test login-prod
-	sls deploy --stage prod --aws-profile $(.PROD_PROFILE)
+	@echo "\nDeploying to stage: prod\n"
+	aws ecr get-login-password --region $(.REGION) --profile saml-dataplatform-prod | docker login --username AWS --password-stdin $(.PROD_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME);
+	docker tag $(.IMAGE_NAME):latest $(.PROD_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME):latest;
+	docker push $(.PROD_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME):latest
 
 ifeq ($(MAKECMDGOALS),undeploy)
 ifndef STAGE
@@ -74,6 +82,7 @@ is-git-clean:
 .PHONY: build
 build: $(BUILD_VENV)/bin/wheel $(BUILD_VENV)/bin/twine
 	$(BUILD_PY) setup.py sdist bdist_wheel
+	docker build -t $(.IMAGE_NAME) .
 
 .PHONY: jenkins-bump-patch
 jenkins-bump-patch: $(BUILD_VENV)/bin/bump2version is-git-clean

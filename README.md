@@ -68,7 +68,9 @@ python -m luigi --module queue_time_predictions.tasks PreprocessImage --prefix=t
 
 ## Deploy
 
-TODO.
+1. Build a fresh Docker image with `make build`.
+2. Deploy the image to Amazon Elastic Container Registry with `make deploy` for
+   development or `make deploy-prod` for production.
 
 ## Process steps
 
@@ -89,4 +91,3 @@ The steps below describe the main steps in the prediction process.
 In addition to the traditionally trained machine learning model, several empirically found constants are being used.
 
 TODO: The background for this will be documented in a separate repo.
-
