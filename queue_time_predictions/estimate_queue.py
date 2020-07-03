@@ -8,6 +8,7 @@ from pathlib import Path
 
 import boto3
 import numpy as np
+from dateutil import tz
 from dateutil.parser import isoparse
 from keras.engine.sequential import Sequential
 
@@ -32,7 +33,7 @@ def parse_image_filename(filename):
     """Return station ID and timestamp found by parsing `filename`.
 
     The filename is expected to be on the form 'station_id_X_T.bin', where X is
-    an integer and T is an ISO 8601 timestamp.
+    an integer and T is an ISO 8601 timestamp in Europe/Oslo time.
     """
     try:
         m = re.match("station_id_([0-9]+)_([0-9T]+).bin", filename)
@@ -42,7 +43,9 @@ def parse_image_filename(filename):
             raise ValueError
 
         station_id = int(groups[0])
-        timestamp = isoparse(groups[1]).timestamp()
+        timestamp = (
+            isoparse(groups[1]).replace(tzinfo=tz.gettz("Europe/Oslo")).timestamp()
+        )
 
     except Exception:
         logging.error(
