@@ -4,7 +4,7 @@ import boto3
 import cv2
 import numpy as np
 from dataplatform.awslambda.logging import log_add
-from keras.applications import VGG16
+from tensorflow.keras.applications import VGG16
 from luigi.contrib.s3 import S3Target
 
 from queue_time_predictions.util import getenv

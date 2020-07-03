@@ -1,5 +1,4 @@
 import logging
-import pickle
 import re
 from dataclasses import dataclass
 from decimal import Decimal
@@ -10,7 +9,7 @@ import boto3
 import numpy as np
 from dateutil import tz
 from dateutil.parser import isoparse
-from keras.engine.sequential import Sequential
+from tensorflow.keras.models import Sequential, load_model
 
 
 @dataclass
@@ -23,9 +22,9 @@ class ModelSpec:
 
 
 model_specs = [
-    ModelSpec("queue_end_pos", "CNN_EoQ__VGG16_noaug_weighted.h5"),
-    ModelSpec("queue_lanes", "CNN_Lanes_VGG16_weighted.h5"),
-    ModelSpec("queue_full", "CNN_QF_VGG16_noaug.h5"),
+    ModelSpec("queue_end_pos", "station_41_queue_end_pos.h5"),
+    ModelSpec("queue_lanes", "station_41_queue_lanes.h5"),
+    ModelSpec("queue_full", "station_41_queue_full.h5"),
 ]
 
 
@@ -58,13 +57,12 @@ def parse_image_filename(filename):
     return station_id, timestamp
 
 
-def load_model(filename, region_name="eu-west-1"):
+def load_model_file(filename, region_name="eu-west-1"):
     """Read and return the model located at `filename`."""
 
     parent_dir = Path(__file__).parent.absolute()
 
-    with open(f"{parent_dir}/models/{filename}", "rb") as f:
-        return pickle.load(f)
+    return load_model(f"{parent_dir}/models/{filename}")
 
 
 def read_image(input_source):
@@ -159,7 +157,7 @@ def estimate_queue(input_source):
     station_id, timestamp = parse_image_filename(input_source.path.split("/")[-1])
 
     for model_spec in model_specs:
-        model_spec.model_object = load_model(model_spec.filename)
+        model_spec.model_object = load_model_file(model_spec.filename)
 
     image = read_image(input_source)
     predictions = predict(model_specs, image)
