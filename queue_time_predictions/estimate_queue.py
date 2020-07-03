@@ -36,6 +36,10 @@ def parse_image_filename(filename):
     """
     try:
         m = re.match("station_id_([0-9]+)_([0-9T]+).bin", filename)
+
+        if not m:
+            raise ValueError
+
         groups = m.groups()
 
         if len(groups) != 2:
@@ -107,6 +111,9 @@ def estimate_cars_at_haraldrud(predictions):
     CAR_DENSITY = 0.13  # cars / meter.
 
     x_pos = predictions["queue_end_pos"]
+
+    # The `queue_lanes` prediction is binary, where 0 means that 1 lane is
+    # predicted and 1 means that 2 lanes is predicted.
     lanes = round(predictions["queue_lanes"] + 1)
 
     assert isinstance(x_pos, (int, float))
@@ -140,6 +147,7 @@ def estimate_time_in_queue(predictions, inflow_rate=70) -> np.float64:
 
 
 def write_to_dynamodb(station_id, timestamp, predictions, region="eu-west-1"):
+    """Store predictions for a station at a given time in DynamoDB."""
     dynamodb = boto3.resource("dynamodb", region)
     table = dynamodb.Table("gjenbruksstasjoner-estimert-kotid")
     table.update_item(

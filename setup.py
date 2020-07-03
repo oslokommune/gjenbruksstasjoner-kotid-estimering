@@ -17,6 +17,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.oslo.kommune.no/origo-dataplatform/gjenbruksstasjoner-kotid-estimering",
     packages=find_packages(),
+    include_package_data=True,
     install_requires=[
         "boto3",
         "dataplatform-common-python",
