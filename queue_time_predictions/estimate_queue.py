@@ -135,7 +135,7 @@ def estimate_cars_at_haraldrud(predictions):
     return meters * CAR_DENSITY
 
 
-def estimate_time_in_queue(predictions, inflow_rate=70) -> np.float64:
+def estimate_time_in_queue(predictions, inflow_rate=74) -> np.float64:
     """Based on the estimated number of cars in the queue and the inflow_rate, an
     expected time in the queue is returned.
 
