@@ -109,6 +109,9 @@ def estimate_cars_at_haraldrud(predictions):
         {"x_pos": 1117, "meters": 139.4},
     ]
     CAR_DENSITY = 0.13  # cars / meter.
+    FULL_THRESHOLD = 0.9  # When the predicted probability of a full queue is higher than this, consider it full.
+    X_POS_THRESHOLD = 300  # The maximum value of the predicted x_pos which is counted as "no queue seen".
+    UNSEEN_DISTANCE = 34  # The distance in meters between the edge of the image and the gate.
 
     x_pos = predictions["queue_end_pos"]
 
@@ -116,21 +119,31 @@ def estimate_cars_at_haraldrud(predictions):
     # predicted and 1 means that 2 lanes is predicted.
     lanes = round(predictions["queue_lanes"] + 1)
 
+    queue_full = predictions["queue_full"]
+
+    assert isinstance(queue_full, (int, float))
+    assert queue_full >= 0 and queue_full <= 1
     assert isinstance(x_pos, (int, float))
     assert x_pos >= 0
     assert isinstance(lanes, (int, float))
     assert lanes >= 1 and lanes <= 2
 
-    meters = np.interp(
-        x_pos, [p["x_pos"] for p in POINTS], [p["meters"] for p in POINTS]
-    )
+    if predictions["queue_full"] > FULL_THRESHOLD:
+        meters = max([point["meters"] for point in POINTS])
+    else:
+        meters = np.interp(
+            x_pos, [p["x_pos"] for p in POINTS], [p["meters"] for p in POINTS]
+        )
 
     meters = meters * lanes
 
-    if x_pos > 33:
+    if x_pos > X_POS_THRESHOLD:
         # If there is a queue, include the non-visible area in front of the
-        # gate.
-        meters += 34
+        # gate. Also see the repo below for the background for this:
+        # gjenbruksstasjoner-kotid-innsikt/blob/master/find_threshold_for_empty_queue_from_xpos/README.md
+        meters += UNSEEN_DISTANCE
+    else:
+        meters = 0
 
     return meters * CAR_DENSITY
 

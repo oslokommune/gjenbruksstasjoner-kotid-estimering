@@ -66,25 +66,32 @@ def test_predict():
 
 
 def test_estimate_cars_at_haraldrud():
-    def estimate(queue_end_pos, queue_lanes):
+    def estimate(queue_end_pos, queue_lanes, queue_full):
         return estimate_cars_at_haraldrud(
-            {"queue_end_pos": queue_end_pos, "queue_lanes": queue_lanes}
+            {
+                "queue_end_pos": queue_end_pos,
+                "queue_lanes": queue_lanes,
+                "queue_full": queue_full,
+            }
         )
 
-    # No visbile queue
-    assert estimate(0, 0) == 0
+    # No visible queue
+    assert estimate(0, 0, 0) == 0
 
     # Still no visible queue
-    assert estimate(33, 0) == 0
+    assert estimate(100, 0, 0) == 0
 
     # Queue is visible
-    assert estimate(34, 0) > 0
+    assert estimate(500, 0, 0) > 0
 
     # An extra lane means more cars
-    assert estimate(100, 1) > estimate(100, 0)
+    assert estimate(500, 1, 0) > estimate(500, 0, 0)
 
     # But it shouldn't make a difference when the queue is invisible
-    assert estimate(5, 1) == estimate(5, 0)
+    assert estimate(5, 1, 0) == estimate(5, 0, 0)
+
+    # The result should be the same for a known full queue and an unrealistically long queue
+    assert estimate(900, 0, 1) == estimate(100000, 0, 0)
 
 
 def test_estimate_time_in_queue():

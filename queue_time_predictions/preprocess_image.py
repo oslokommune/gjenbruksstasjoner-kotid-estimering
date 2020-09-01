@@ -27,7 +27,8 @@ def image_object(prefix: str, region_name="eu-west-1"):
         return next(iter(bucket.objects.filter(Prefix=prefix)))
     except StopIteration:
         log_add(
-            error_message=f"No images found at S3 prefix {prefix}.", level="error",
+            error_message=f"No images found at S3 prefix {prefix}.",
+            level="error",
         )
         raise
 
