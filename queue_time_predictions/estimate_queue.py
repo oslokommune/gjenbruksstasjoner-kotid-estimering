@@ -111,7 +111,9 @@ def estimate_cars_at_haraldrud(predictions):
     CAR_DENSITY = 0.13  # cars / meter.
     FULL_THRESHOLD = 0.9  # When the predicted probability of a full queue is higher than this, consider it full.
     X_POS_THRESHOLD = 300  # The maximum value of the predicted x_pos which is counted as "no queue seen".
-    UNSEEN_DISTANCE = 34  # The distance in meters between the edge of the image and the gate.
+    UNSEEN_DISTANCE = (
+        34  # The distance in meters between the edge of the image and the gate.
+    )
 
     x_pos = predictions["queue_end_pos"]
 
