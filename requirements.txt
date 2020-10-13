@@ -26,14 +26,14 @@ google-pasta==0.2.0       # via tensorflow
 grpcio==1.30.0            # via tensorboard, tensorflow
 h5py==2.10.0              # via tensorflow
 idna==2.10                # via requests
-importlib-metadata==1.7.0  # via jsonpickle, markdown
+importlib-metadata==1.7.0  # via jsonpickle
 jmespath==0.10.0          # via boto3, botocore
 jsonpickle==1.4.1         # via aws-xray-sdk
 keras-preprocessing==1.1.2  # via tensorflow
 lockfile==0.12.2          # via python-daemon
 luigi==3.0.0              # via gjenbruksstasjoner-kotid-estimering (setup.py)
 markdown==3.2.2           # via tensorboard
-numpy==1.19.0             # via gjenbruksstasjoner-kotid-estimering (setup.py), h5py, keras-preprocessing, opencv-python-headless, opt-einsum, scipy, tensorboard, tensorflow
+numpy==1.18.5             # via gjenbruksstasjoner-kotid-estimering (setup.py), h5py, keras-preprocessing, opencv-python-headless, opt-einsum, tensorboard, tensorflow
 oauthlib==3.1.0           # via requests-oauthlib
 opencv-python-headless==4.2.0.34  # via gjenbruksstasjoner-kotid-estimering (setup.py)
 opt-einsum==3.2.1         # via tensorflow
@@ -49,14 +49,13 @@ requests==2.24.0          # via dataplatform-common-python, python-keycloak, req
 rsa==4.6                  # via google-auth, python-jose
 s3fs==0.4.2               # via gjenbruksstasjoner-kotid-estimering (setup.py)
 s3transfer==0.3.3         # via boto3
-scipy==1.4.1              # via tensorflow
 simplejson==3.17.0        # via dataplatform-common-python
 six==1.15.0               # via absl-py, astunparse, ecdsa, google-auth, google-pasta, grpcio, h5py, keras-preprocessing, protobuf, python-dateutil, python-jose, structlog, tensorboard, tensorflow
 structlog==20.1.0         # via dataplatform-common-python
 tensorboard-plugin-wit==1.7.0  # via tensorboard
-tensorboard==2.2.2        # via tensorflow
-tensorflow-estimator==2.2.0  # via tensorflow
-tensorflow==2.2.0         # via gjenbruksstasjoner-kotid-estimering (setup.py)
+tensorboard==2.3.0        # via tensorflow
+tensorflow-estimator==2.3.0  # via tensorflow
+tensorflow==2.3.1         # via gjenbruksstasjoner-kotid-estimering (setup.py)
 termcolor==1.1.0          # via tensorflow
 tornado==5.1.1            # via luigi
 urllib3==1.25.9           # via botocore, requests

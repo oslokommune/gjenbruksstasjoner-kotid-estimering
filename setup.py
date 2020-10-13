@@ -26,6 +26,6 @@ setup(
         "opencv-python-headless",
         "python-dateutil",
         "s3fs",
-        "tensorflow",
+        "tensorflow==2.3.1",
     ],
 )

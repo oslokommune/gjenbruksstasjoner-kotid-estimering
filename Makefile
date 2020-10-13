@@ -12,7 +12,7 @@
 
 .IMAGE_NAME := ok-origo-dataplatform/gjenbruksstasjoner-kotid-estimering
 
-GLOBAL_PY := python3.7
+GLOBAL_PY := python3
 BUILD_VENV ?= .build_venv
 BUILD_PY := $(BUILD_VENV)/bin/python
 
