@@ -116,6 +116,8 @@ def estimate_cars_at_haraldrud(predictions):
     )
 
     x_pos = predictions["queue_end_pos"]
+    if x_pos < 0:
+        x_pos = 0.0
 
     # The `queue_lanes` prediction is binary, where 0 means that 1 lane is
     # predicted and 1 means that 2 lanes is predicted.
