@@ -29,14 +29,14 @@ upgrade-deps: $(BUILD_VENV)/bin/pip-compile
 .PHONY: deploy
 deploy: test login-dev
 	@echo "\nDeploying to stage: dev\n"
-	aws ecr get-login-password --region $(.REGION) | docker login --username AWS --password-stdin $(OKDATA_DEV_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME);
+	aws ecr get-login-password --region $(.REGION) --profile $(.DEV_PROFILE) | docker login --username AWS --password-stdin $(OKDATA_DEV_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME);
 	docker tag $(.IMAGE_NAME):latest $(OKDATA_DEV_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME):latest;
 	docker push $(OKDATA_DEV_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME):latest
 
 .PHONY: deploy-prod
 deploy-prod: is-git-clean test login-prod
 	@echo "\nDeploying to stage: prod\n"
-	aws ecr get-login-password --region $(.REGION) --profile saml-dataplatform-prod | docker login --username AWS --password-stdin $(OKDATA_PROD_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME);
+	aws ecr get-login-password --region $(.REGION) --profile $(.PROD_PROFILE) | docker login --username AWS --password-stdin $(OKDATA_PROD_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME);
 	docker tag $(.IMAGE_NAME):latest $(OKDATA_PROD_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME):latest;
 	docker push $(OKDATA_PROD_ACCOUNT).dkr.ecr.$(.REGION).amazonaws.com/$(.IMAGE_NAME):latest
 
